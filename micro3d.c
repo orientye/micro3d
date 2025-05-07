@@ -13,6 +13,10 @@ typedef struct {
 } transform_t;
 
 typedef struct {
+	float r, g, b;
+} color_t;
+
+typedef struct {
 	int width;
 	int height;
 } device_t;

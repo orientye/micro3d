@@ -34,3 +34,7 @@ void pixel(device_t* device, int x, int y, color_t clr) {
 void line(device_t* device, int x1, int y1, int x2, int y2, color_t clr) {
 
 }
+
+void triangle(device_t* device, const vec4_t& v1, const vec4_t& v2, const vec4_t& v3) {
+
+}

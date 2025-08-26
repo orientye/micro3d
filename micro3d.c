@@ -42,3 +42,7 @@ void triangle(device_t* device, const vec4_t& v1, const vec4_t& v2, const vec4_t
 void lookAt(matrix_t* view, const vec4_t& eye, const vec4_t& target, const vec4_t& up) {
 
 }
+
+int main (void) {
+    return 0;
+}

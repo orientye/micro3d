@@ -38,7 +38,25 @@ void pixel(device_t* device, int x, int y, color_t clr) {
 }
 
 void line(device_t* device, int x1, int y1, int x2, int y2, color_t clr) {
-
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int sx = (x1 < x2) ? 1 : -1;
+    int sy = (y1 < y2) ? 1 : -1;
+    int err = (dx > dy ? dx : -dy) / 2;
+    int err2;
+    while (1) {
+        pixel(device, x1, y1, clr);
+        if (x1 == x2 && y1 == y2) break;
+        err2 = err;
+        if (err2 > -dx) {
+            err -= dy;
+            x1 += sx;
+        }
+        if (err2 < dy) {
+            err += dx;
+            y1 += sy;
+        }
+    }
 }
 
 void triangle(device_t* device, const vec4_t& v1, const vec4_t& v2, const vec4_t& v3) {

@@ -1,5 +1,5 @@
-const int WIDTH = 800;
-const int HEIGHT = 600;
+#define WIDTH (800)
+#define HEIGHT (600)
 
 typedef struct {
 	float x, y, z, w;
@@ -15,7 +15,7 @@ typedef struct {
 	matrix_t projection;
 } transform_t;
 
-struct {
+typedef struct {
 	union {
 		struct {
 			unsigned char r, g, b, a;
@@ -33,7 +33,7 @@ typedef struct {
 
 void pixel(device_t* device, int x, int y, color_t clr) {
      if (x >= 0 && x < device->width && y >= 0 && y < device->height) {
-        device->buffer[x][y] = clr;
+        device->buffer[x][y] = clr.val;
     }
 }
 
@@ -59,14 +59,10 @@ void line(device_t* device, int x1, int y1, int x2, int y2, color_t clr) {
     }
 }
 
-void triangle(device_t* device, const vec4_t& v1, const vec4_t& v2, const vec4_t& v3) {
+void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3) {
 
 }
 
-void lookAt(matrix_t* view, const vec4_t& eye, const vec4_t& target, const vec4_t& up) {
+void lookAt(matrix_t* view, vec4_t* eye, vec4_t*target, vec4_t* up) {
 
-}
-
-int main (void) {
-    return 0;
 }

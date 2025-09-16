@@ -2,6 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\micro3d.c" />
-    <ClCompile Include="winmain.cpp" />
+    <ClCompile Include="win-main.cpp" />
   </ItemGroup>
 </Project>

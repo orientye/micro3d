@@ -1,6 +1,3 @@
-#define WIDTH (800)
-#define HEIGHT (600)
-
 typedef struct {
 	float x, y, z, w;
 } vec4_t;
@@ -28,7 +25,7 @@ typedef struct {
 typedef struct {
 	int width;
 	int height;
-	unsigned int buffer[WIDTH][HEIGHT];
+	unsigned int** buffer;
 } device_t;
 
 void pixel(device_t* device, int x, int y, color_t clr) {

@@ -45,8 +45,8 @@ int WINAPI WinMain(
     HWND hwnd = CreateWindowEx(
         0,
         CLASS_NAME,
-        L"CreateDIBSection 自定义渲染",
-        WS_OVERLAPPEDWINDOW,
+        L"micro3d",
+        WS_OVERLAPPEDWINDOW & ~WS_THICKFRAME & ~WS_MAXIMIZEBOX,
         CW_USEDEFAULT, CW_USEDEFAULT,
         g_windowWidth, g_windowHeight,
         NULL,
@@ -242,7 +242,7 @@ void Render()
     SetBkMode(g_memDC, TRANSPARENT);
 
     wchar_t info[256];
-    swprintf_s(info, L"使用CreateDIBSection - 点: (%d, %d) 线: (%d, %d)到(%d, %d) FPS: 60", 
+    swprintf_s(info, L"micro3d - 点: (%d, %d) 线: (%d, %d)到(%d, %d) FPS: 60", 
                pointX, pointY, startX, startY, endX, endY);
     TextOut(g_memDC, 10, g_windowHeight - 30, info, wcslen(info));
 

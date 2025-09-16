@@ -1,15 +1,27 @@
 ﻿#include <Windows.h>
 #include <chrono>
+#include <cmath>
 
 // 声明窗口过程函数
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // 渲染函数
-void Render(HDC hdc, int width, int height);
+void Render();
 
-// 全局变量用于动画
+// 自定义绘制函数
+void DrawPixel(int x, int y, COLORREF color);
+void DrawLine(int x1, int y1, int x2, int y2, COLORREF color);
+void ClearScreen(COLORREF color);
+
+// 全局变量
 int g_windowWidth = 800;
 int g_windowHeight = 600;
+
+// DIB相关变量
+HBITMAP g_hBitmap = nullptr;
+void* g_pixels = nullptr;
+HDC g_memDC = nullptr;
+BITMAPINFO g_bmi = {};
 
 int WINAPI WinMain(
     HINSTANCE hInstance,
@@ -18,7 +30,7 @@ int WINAPI WinMain(
     int       nCmdShow)
 {
     // 注册窗口类
-    const wchar_t CLASS_NAME[] = L"CustomRenderWindowClass";
+    const wchar_t CLASS_NAME[] = L"DIBSectionWindowClass";
 
     WNDCLASS wc = { };
     wc.lpfnWndProc = WindowProc;
@@ -33,7 +45,7 @@ int WINAPI WinMain(
     HWND hwnd = CreateWindowEx(
         0,
         CLASS_NAME,
-        L"自定义渲染 - 点和线",
+        L"CreateDIBSection 自定义渲染",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         g_windowWidth, g_windowHeight,
@@ -48,6 +60,28 @@ int WINAPI WinMain(
         return 0;
     }
 
+    // 初始化DIB Section
+    HDC hdc = GetDC(hwnd);
+    
+    // 设置BITMAPINFO结构
+    ZeroMemory(&g_bmi, sizeof(BITMAPINFO));
+    g_bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    g_bmi.bmiHeader.biWidth = g_windowWidth;
+    g_bmi.bmiHeader.biHeight = -g_windowHeight; // 负值表示从上到下的DIB
+    g_bmi.bmiHeader.biPlanes = 1;
+    g_bmi.bmiHeader.biBitCount = 32; // 32位ARGB
+    g_bmi.bmiHeader.biCompression = BI_RGB;
+    g_bmi.bmiHeader.biSizeImage = 0;
+
+    // 创建DIB Section
+    g_hBitmap = CreateDIBSection(hdc, &g_bmi, DIB_RGB_COLORS, &g_pixels, NULL, 0);
+    
+    // 创建内存DC
+    g_memDC = CreateCompatibleDC(hdc);
+    SelectObject(g_memDC, g_hBitmap);
+    
+    ReleaseDC(hwnd, hdc);
+
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
@@ -57,7 +91,6 @@ int WINAPI WinMain(
 
     while (true)
     {
-        // 处理消息
         if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)
@@ -68,123 +101,152 @@ int WINAPI WinMain(
         }
         else
         {
-            // 计算帧时间
             auto currentTime = std::chrono::high_resolution_clock::now();
             auto deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
 
-            // 约60FPS
-            if (deltaTime > 16)
+            if (deltaTime > 16) // ~60 FPS
             {
                 lastTime = currentTime;
 
-                // 获取设备上下文
-                HDC hdc = GetDC(hwnd);
-
-                // 创建内存DC用于双缓冲
-                HDC memDC = CreateCompatibleDC(hdc);
-                HBITMAP memBitmap = CreateCompatibleBitmap(hdc, g_windowWidth, g_windowHeight);
-                HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, memBitmap);
-
-                // 清空背景
-                RECT rect = { 0, 0, g_windowWidth, g_windowHeight };
-                HBRUSH bgBrush = CreateSolidBrush(RGB(240, 240, 240));
-                FillRect(memDC, &rect, bgBrush);
-                DeleteObject(bgBrush);
+                // 清屏
+                ClearScreen(RGB(240, 240, 240));
 
                 // 自定义渲染
-                Render(memDC, g_windowWidth, g_windowHeight);
+                Render();
 
-                // 将内存DC内容复制到屏幕DC
-                BitBlt(hdc, 0, 0, g_windowWidth, g_windowHeight, memDC, 0, 0, SRCCOPY);
-
-                // 清理资源
-                SelectObject(memDC, oldBitmap);
-                DeleteObject(memBitmap);
-                DeleteDC(memDC);
+                // 更新到屏幕
+                HDC hdc = GetDC(hwnd);
+                BitBlt(hdc, 0, 0, g_windowWidth, g_windowHeight, g_memDC, 0, 0, SRCCOPY);
                 ReleaseDC(hwnd, hdc);
             }
         }
     }
 
+    // 清理资源
+    if (g_memDC) DeleteDC(g_memDC);
+    if (g_hBitmap) DeleteObject(g_hBitmap);
+
     return (int)msg.wParam;
 }
 
-// 自定义渲染函数
-void Render(HDC hdc, int width, int height)
+// 绘制像素函数
+void DrawPixel(int x, int y, COLORREF color)
 {
-    // 1. 绘制一个红色的点（使用多个像素使其更明显）
-    COLORREF redColor = RGB(255, 0, 0);
-    int pointSize = 3; // 点的大小（像素）
-    int pointX = 100;
-    int pointY = 100;
+    if (x < 0 || x >= g_windowWidth || y < 0 || y >= g_windowHeight)
+        return;
 
-    for (int i = -pointSize/2; i <= pointSize/2; i++)
-    {
-        for (int j = -pointSize/2; j <= pointSize/2; j++)
-        {
-            SetPixel(hdc, pointX + i, pointY + j, redColor);
-        }
-    }
+    // 计算像素位置（32位，每个像素4字节）
+    int offset = y * g_windowWidth + x;
+    BYTE* pixel = (BYTE*)g_pixels + offset * 4;
+    
+    // 设置颜色（BGR格式）
+    pixel[0] = GetBValue(color); // Blue
+    pixel[1] = GetGValue(color); // Green
+    pixel[2] = GetRValue(color); // Red
+    pixel[3] = 0;               // Alpha (未使用)
+}
 
-    // 2. 绘制一条蓝色的线（使用自定义的Bresenham画线算法）
-    COLORREF blueColor = RGB(0, 0, 255);
-    int startX = 200;
-    int startY = 150;
-    int endX = 400;
-    int endY = 300;
-
-    // 简单的Bresenham画线算法实现
-    int dx = abs(endX - startX);
-    int dy = abs(endY - startY);
-    int sx = (startX < endX) ? 1 : -1;
-    int sy = (startY < endY) ? 1 : -1;
+// 绘制线函数（Bresenham算法）
+void DrawLine(int x1, int y1, int x2, int y2, COLORREF color)
+{
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int sx = (x1 < x2) ? 1 : -1;
+    int sy = (y1 < y2) ? 1 : -1;
     int err = dx - dy;
-
-    int x = startX;
-    int y = startY;
 
     while (true)
     {
-        // 绘制线上的点（可以绘制多个像素使线更粗）
+        // 绘制线宽为3的线
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
             {
-                SetPixel(hdc, x + i, y + j, blueColor);
+                DrawPixel(x1 + i, y1 + j, color);
             }
         }
 
-        if (x == endX && y == endY)
+        if (x1 == x2 && y1 == y2)
             break;
 
         int e2 = 2 * err;
         if (e2 > -dy)
         {
             err -= dy;
-            x += sx;
+            x1 += sx;
         }
         if (e2 < dx)
         {
             err += dx;
-            y += sy;
+            y1 += sy;
+        }
+    }
+}
+
+// 清屏函数
+void ClearScreen(COLORREF color)
+{
+    BYTE r = GetRValue(color);
+    BYTE g = GetGValue(color);
+    BYTE b = GetBValue(color);
+
+    // 直接操作整个像素缓冲区
+    BYTE* pixel = (BYTE*)g_pixels;
+    int totalPixels = g_windowWidth * g_windowHeight;
+
+    for (int i = 0; i < totalPixels; i++)
+    {
+        pixel[0] = b; // Blue
+        pixel[1] = g; // Green
+        pixel[2] = r; // Red
+        pixel[3] = 0; // Alpha
+        
+        pixel += 4;
+    }
+}
+
+// 自定义渲染函数
+void Render()
+{
+    static int frameCount = 0;
+    frameCount++;
+
+    // 1. 绘制一个红色的点（会动）
+    int pointX = 100 + 50 * sin(frameCount * 0.05f);
+    int pointY = 100 + 50 * cos(frameCount * 0.05f);
+    
+    // 绘制大一点的点
+    for (int i = -3; i <= 3; i++)
+    {
+        for (int j = -3; j <= 3; j++)
+        {
+            DrawPixel(pointX + i, pointY + j, RGB(255, 0, 0));
         }
     }
 
-    // 3. 绘制坐标信息
+    // 2. 绘制一条蓝色的线（也会动）
+    int startX = 200;
+    int startY = 150;
+    int endX = 400 + 50 * sin(frameCount * 0.03f);
+    int endY = 300 + 50 * cos(frameCount * 0.03f);
+    
+    DrawLine(startX, startY, endX, endY, RGB(0, 0, 255));
+
+    // 3. 绘制一些文字信息（使用GDI，因为文字渲染用DIB比较麻烦）
     HFONT hFont = CreateFont(16, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE,
         DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Arial");
 
-    HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
-    SetTextColor(hdc, RGB(0, 0, 0));
-    SetBkMode(hdc, TRANSPARENT);
+    HFONT hOldFont = (HFONT)SelectObject(g_memDC, hFont);
+    SetTextColor(g_memDC, RGB(0, 0, 0));
+    SetBkMode(g_memDC, TRANSPARENT);
 
-    wchar_t info[100];
-    swprintf_s(info, L"点: (%d, %d)  线: (%d, %d) 到 (%d, %d)", 
+    wchar_t info[256];
+    swprintf_s(info, L"使用CreateDIBSection - 点: (%d, %d) 线: (%d, %d)到(%d, %d) FPS: 60", 
                pointX, pointY, startX, startY, endX, endY);
-    TextOut(hdc, 10, height - 30, info, wcslen(info));
+    TextOut(g_memDC, 10, g_windowHeight - 30, info, wcslen(info));
 
-    SelectObject(hdc, hOldFont);
+    SelectObject(g_memDC, hOldFont);
     DeleteObject(hFont);
 }
 
@@ -198,20 +260,35 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_SIZE:
-        // 更新窗口尺寸
+    {
+        // 窗口大小改变时重新创建DIB Section
         g_windowWidth = LOWORD(lParam);
         g_windowHeight = HIWORD(lParam);
+
+        // 清理旧资源
+        if (g_memDC) DeleteDC(g_memDC);
+        if (g_hBitmap) DeleteObject(g_hBitmap);
+
+        // 创建新的DIB Section
+        HDC hdc = GetDC(hwnd);
+        
+        g_bmi.bmiHeader.biWidth = g_windowWidth;
+        g_bmi.bmiHeader.biHeight = -g_windowHeight;
+        
+        g_hBitmap = CreateDIBSection(hdc, &g_bmi, DIB_RGB_COLORS, &g_pixels, NULL, 0);
+        g_memDC = CreateCompatibleDC(hdc);
+        SelectObject(g_memDC, g_hBitmap);
+        
+        ReleaseDC(hwnd, hdc);
         return 0;
+    }
 
     case WM_ERASEBKGND:
-        // 阻止系统擦除背景，由我们自己处理
-        return 1;
+        return 1; // 阻止系统擦除背景
 
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE)
-        {
             PostQuitMessage(0);
-        }
         return 0;
     }
 

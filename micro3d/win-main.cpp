@@ -2,6 +2,8 @@
 #include <chrono>
 #include <cmath>
 
+#include "../micro3d.h"
+
 // 声明窗口过程函数
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 

@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct {
 	float x, y, z, w;
 } vec4_t;
@@ -28,15 +30,15 @@ typedef struct {
 	unsigned int** buffer;
 } device_t;
 
-void pixel(device_t* device, int x, int y, color_t clr) {
+inline void pixel(device_t* device, int x, int y, color_t clr) {
      if (x >= 0 && x < device->width && y >= 0 && y < device->height) {
         device->buffer[x][y] = clr.val;
     }
 }
 
-void line(device_t* device, int x1, int y1, int x2, int y2, color_t clr) {
-    int dx = abs(x2 - x1);
-    int dy = abs(y2 - y1);
+inline void line(device_t* device, int x1, int y1, int x2, int y2, color_t clr) {
+    int dx = (x1 < x2) ? (x2 - x1) : (x1 - x2);
+	int dy = (y1 < y2) ? (y2 - y1) : (y1 - y2);
     int sx = (x1 < x2) ? 1 : -1;
     int sy = (y1 < y2) ? 1 : -1;
     int err = (dx > dy ? dx : -dy) / 2;
@@ -56,10 +58,10 @@ void line(device_t* device, int x1, int y1, int x2, int y2, color_t clr) {
     }
 }
 
-void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3) {
+inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3) {
 
 }
 
-void lookAt(matrix_t* view, vec4_t* eye, vec4_t*target, vec4_t* up) {
+inline void lookAt(matrix_t* view, vec4_t* eye, vec4_t*target, vec4_t* up) {
 
 }

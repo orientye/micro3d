@@ -259,30 +259,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         return 0;
 
-    case WM_SIZE:
-    {
-        // 窗口大小改变时重新创建DIB Section
-        g_windowWidth = LOWORD(lParam);
-        g_windowHeight = HIWORD(lParam);
-
-        // 清理旧资源
-        if (g_memDC) DeleteDC(g_memDC);
-        if (g_hBitmap) DeleteObject(g_hBitmap);
-
-        // 创建新的DIB Section
-        HDC hdc = GetDC(hwnd);
-        
-        g_bmi.bmiHeader.biWidth = g_windowWidth;
-        g_bmi.bmiHeader.biHeight = -g_windowHeight;
-        
-        g_hBitmap = CreateDIBSection(hdc, &g_bmi, DIB_RGB_COLORS, &g_pixels, NULL, 0);
-        g_memDC = CreateCompatibleDC(hdc);
-        SelectObject(g_memDC, g_hBitmap);
-        
-        ReleaseDC(hwnd, hdc);
-        return 0;
-    }
-
     case WM_ERASEBKGND:
         return 1; // 阻止系统擦除背景
 

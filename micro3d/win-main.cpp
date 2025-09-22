@@ -25,6 +25,8 @@ void* g_pixels = nullptr;
 HDC g_memDC = nullptr;
 BITMAPINFO g_bmi = {};
 
+device_t g_device;
+
 int WINAPI WinMain(
     HINSTANCE hInstance,
     HINSTANCE hPrevInstance,
@@ -75,8 +77,11 @@ int WINAPI WinMain(
     g_bmi.bmiHeader.biCompression = BI_RGB;
     g_bmi.bmiHeader.biSizeImage = 0;
 
+	g_device.width = g_windowWidth;
+	g_device.height = g_windowHeight;
+
     // 创建DIB Section
-    g_hBitmap = CreateDIBSection(hdc, &g_bmi, DIB_RGB_COLORS, &g_pixels, NULL, 0);
+    g_hBitmap = CreateDIBSection(hdc, &g_bmi, DIB_RGB_COLORS, (void**)(&g_device.buffer), NULL, 0);
     
     // 创建内存DC
     g_memDC = CreateCompatibleDC(hdc);
@@ -111,10 +116,11 @@ int WINAPI WinMain(
                 lastTime = currentTime;
 
                 // 清屏
-                ClearScreen(RGB(240, 240, 240));
+                //ClearScreen(RGB(240, 240, 240));
 
                 // 自定义渲染
-                Render();
+                //Render();
+				render3d(&g_device);
 
                 // 更新到屏幕
                 HDC hdc = GetDC(hwnd);

@@ -27,16 +27,16 @@ typedef struct {
 typedef struct {
 	int width;
 	int height;
-	unsigned int** buffer;
+	unsigned int* buffer;
 } device_t;
 
-inline void pixel(device_t* device, int x, int y, color_t clr) {
+inline void pixel(device_t* device, int x, int y, unsigned int clr) {
      if (x >= 0 && x < device->width && y >= 0 && y < device->height) {
-        device->buffer[x][y] = clr.val;
+        device->buffer[x * device->width + y] = clr;
     }
 }
 
-inline void line(device_t* device, int x1, int y1, int x2, int y2, color_t clr) {
+inline void line(device_t* device, int x1, int y1, int x2, int y2, unsigned int clr) {
     int dx = (x1 < x2) ? (x2 - x1) : (x1 - x2);
 	int dy = (y1 < y2) ? (y2 - y1) : (y1 - y2);
     int sx = (x1 < x2) ? 1 : -1;
@@ -64,4 +64,8 @@ inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3) {
 
 inline void lookAt(matrix_t* view, vec4_t* eye, vec4_t*target, vec4_t* up) {
 
+}
+
+inline void render3d(device_t* device) {
+	line(device, 10, 01, 100, 100, 0xc00000);
 }

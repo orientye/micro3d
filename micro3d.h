@@ -31,8 +31,8 @@ typedef struct {
 } device_t;
 
 inline void pixel(device_t* device, int x, int y, unsigned int clr) {
-     if (x >= 0 && x < device->width && y >= 0 && y < device->height) {
-        device->buffer[x * device->width + y] = clr;
+	if (x >= 0 && x < device->width && y >= 0 && y < device->height) {
+        device->buffer[x  + y * device->width] = clr;
     }
 }
 
@@ -67,5 +67,9 @@ inline void lookAt(matrix_t* view, vec4_t* eye, vec4_t*target, vec4_t* up) {
 }
 
 inline void render3d(device_t* device) {
-	line(device, 10, 01, 100, 100, 0xc00000);
+	pixel(device, 400, 100, 0xc00000);
+	pixel(device, 400, 200, 0xc00000);
+	pixel(device, 400, 300, 0xc00000);
+	line(device, 0, 0, 400, 300, 0xc00000);
+	line(device, 400, 0, 400, 150, 0xc00000);
 }

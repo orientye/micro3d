@@ -15,16 +15,6 @@ typedef struct {
 } transform_t;
 
 typedef struct {
-	union {
-		struct {
-			unsigned char r, g, b, a;
-		};
-		unsigned char raw[4];
-		unsigned int val;
-	};
-} color_t;
-
-typedef struct {
 	int width;
 	int height;
 	unsigned int* buffer;

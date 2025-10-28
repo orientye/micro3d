@@ -82,9 +82,6 @@ inline void triangle_bbox(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, 
         return;
     }
 
-    // 预计算一些值以提高性能
-    float inv_area = 1.0f / area;
-
     // 遍历边界框内的每个像素
     for (int y = min_y; y <= max_y; y++) {
         for (int x = min_x; x <= max_x; x++) {

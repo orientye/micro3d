@@ -177,17 +177,31 @@ inline void matrix_perspective_fov(matrix_t* projection, float fovY, float aspec
             projection->m[i][j] = 0.0f;
         }
     }
-    
+
     // 计算投影参数
-    float yScale = 1.0f / tanf(fovY * 0.5f);  // cot(fovY/2)
+    float yScale = 1.0f / tanf(fovY * 0.5f); // cot(fovY/2)
     float xScale = yScale / aspect;
-    
-    // 构建左手透视投影矩阵
-    projection->m[0][0] = xScale;              // 缩放 x 坐标
-    projection->m[1][1] = yScale;              // 缩放 y 坐标
-    projection->m[2][2] = zf / (zf - zn);      // 深度映射
-    projection->m[2][3] = 1.0f;                // 透视除法
-    projection->m[3][2] = -zn * zf / (zf - zn); // 深度平移
+
+    //// 构建左手透视投影矩阵    左手系：+Z 指向屏幕外
+    //projection->m[0][0] = xScale; // 缩放 x 坐标
+    //projection->m[1][1] = yScale; // 缩放 y 坐标
+    //projection->m[2][2] = zf / (zf - zn); // 深度映射
+    //projection->m[2][3] = 1.0f; // 透视除法
+    //projection->m[3][2] = -zn * zf / (zf - zn); // 深度平移
+
+    // 构建右手透视投影矩阵    右手系：+Z 指向屏幕内
+    projection->m[0][0] = xScale; // 缩放 x 坐标
+    projection->m[1][1] = yScale; // 缩放 y 坐标
+    projection->m[2][2] = zf / (zn - zf); // 深度映射 (右手系)
+    projection->m[2][3] = -1.0f; // 透视除法 (右手系为负)
+    projection->m[3][2] = zn * zf / (zn - zf); // 深度平移 (右手系)
+
+	//// OpenGL风格的右手投影矩阵 (Z范围[-1,1])
+ //   projection->m[0][0] = xScale;
+ //   projection->m[1][1] = yScale;
+ //   projection->m[2][2] = (zf + zn) / (zn - zf);     // 映射到[-1,1]
+ //   projection->m[2][3] = -1.0f;
+ //   projection->m[3][2] = (2.0f * zf * zn) / (zn - zf);
 }
 
 inline void render3d(device_t* device)

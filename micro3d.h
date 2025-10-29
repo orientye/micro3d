@@ -63,8 +63,7 @@ inline float cross_product_2d(const vec4_t* a, const vec4_t* b, const vec4_t* c)
     return (b->x - a->x) * (c->y - a->y) - (b->y - a->y) * (c->x - a->x);
 }
 
-// 边界框三角形填充
-inline void triangle_bbox(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsigned int clr)
+inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsigned int clr)
 {
     // 计算三角形的边界框
     int min_x = (int)fminf(fminf(v1->x, v2->x), v3->x);
@@ -102,12 +101,6 @@ inline void triangle_bbox(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, 
             }
         }
     }
-}
-
-// 主三角形函数 - 根据需求选择不同的实现
-inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsigned int clr)
-{
-    triangle_bbox(device, v1, v2, v3, clr);
 }
 
 inline void matrix_look_at(matrix_t* view, vec4_t* eye, vec4_t* target, vec4_t* up)

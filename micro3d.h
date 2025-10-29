@@ -110,7 +110,7 @@ inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsig
     triangle_bbox(device, v1, v2, v3, clr);
 }
 
-inline void lookAt(matrix_t* view, vec4_t* eye, vec4_t* target, vec4_t* up)
+inline void matrix_look_at(matrix_t* view, vec4_t* eye, vec4_t* target, vec4_t* up)
 {
     // 计算前向向量 (forward = target - eye)
     vec4_t forward = {
@@ -174,6 +174,27 @@ inline void lookAt(matrix_t* view, vec4_t* eye, vec4_t* target, vec4_t* up)
     view->m[3][1] = -(new_up.x * eye->x + new_up.y * eye->y + new_up.z * eye->z);
     view->m[3][2] = forward.x * eye->x + forward.y * eye->y + forward.z * eye->z;
     view->m[3][3] = 1.0f;
+}
+
+inline void matrix_perspective_fov(matrix_t* projection, float fovY, float aspect, float zn, float zf)
+{
+    // 清除矩阵
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            projection->m[i][j] = 0.0f;
+        }
+    }
+    
+    // 计算投影参数
+    float yScale = 1.0f / tanf(fovY * 0.5f);  // cot(fovY/2)
+    float xScale = yScale / aspect;
+    
+    // 构建左手透视投影矩阵
+    projection->m[0][0] = xScale;              // 缩放 x 坐标
+    projection->m[1][1] = yScale;              // 缩放 y 坐标
+    projection->m[2][2] = zf / (zf - zn);      // 深度映射
+    projection->m[2][3] = 1.0f;                // 透视除法
+    projection->m[3][2] = -zn * zf / (zf - zn); // 深度平移
 }
 
 inline void render3d(device_t* device)

@@ -53,11 +53,11 @@ inline void line(device_t* device, int x1, int y1, int x2, int y2, unsigned int 
     }
 }
 
-//向量 AB 和向量 AC 的二维叉积
-//公式：(Bx - Ax)*(Cy - Ay) - (By - Ay)*(Cx - Ax)
-//正值：AB 正旋转(即逆时针)到 AC 小于 180 度
-//负值：AB 正旋转(即逆时针)到 AC 大于 180 度
-//零：AB 与 AC 平行
+// 向量 AB 和向量 AC 的二维叉积
+// 公式：(Bx - Ax)*(Cy - Ay) - (By - Ay)*(Cx - Ax)
+// 正值：AB 正旋转(即逆时针)到 AC 小于 180 度
+// 负值：AB 正旋转(即逆时针)到 AC 大于 180 度
+// 零：AB 与 AC 平行
 inline float cross_product_2d(const vec4_t* a, const vec4_t* b, const vec4_t* c)
 {
     return (b->x - a->x) * (c->y - a->y) - (b->y - a->y) * (c->x - a->x);

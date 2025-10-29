@@ -53,8 +53,12 @@ inline void line(device_t* device, int x1, int y1, int x2, int y2, unsigned int 
     }
 }
 
-// 边缘函数计算
-inline float edge_function(const vec4_t* a, const vec4_t* b, const vec4_t* c)
+//向量 AB 和向量 AC 的二维叉积
+//公式：(Bx - Ax)*(Cy - Ay) - (By - Ay)*(Cx - Ax)
+//正值：AB 正旋转(即逆时针)到 AC 小于 180 度
+//负值：AB 正旋转(即逆时针)到 AC 大于 180 度
+//零：AB 与 AC 平行
+inline float cross_product_2d(const vec4_t* a, const vec4_t* b, const vec4_t* c)
 {
     return (b->x - a->x) * (c->y - a->y) - (b->y - a->y) * (c->x - a->x);
 }
@@ -74,8 +78,8 @@ inline void triangle_bbox(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, 
     min_y = fmax(min_y, 0);
     max_y = fmin(max_y, device->height - 1);
 
-    // 计算整个三角形的有向面积（用于重心坐标归一化）
-    float area = edge_function(v1, v2, v3);
+    // 计算整个三角形的有向面积
+    float area = cross_product_2d(v1, v2, v3);
 
     // 如果面积为0，说明是退化三角形，不绘制
     if (fabsf(area) < 1e-8f) {
@@ -89,12 +93,11 @@ inline void triangle_bbox(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, 
             vec4_t p = { (float)x + 0.5f, (float)y + 0.5f, 0, 1 };
 
             // 计算重心坐标
-            float w0 = edge_function(v2, v3, &p);
-            float w1 = edge_function(v3, v1, &p);
-            float w2 = edge_function(v1, v2, &p);
+            float w0 = cross_product_2d(v2, v3, &p);
+            float w1 = cross_product_2d(v3, v1, &p);
+            float w2 = cross_product_2d(v1, v2, &p);
 
             // 检查像素是否在三角形内
-            // 注意：这里假设三角形是逆时针顺序，如果是顺时针需要调整判断条件
             if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
                 pixel(device, x, y, clr);
             }

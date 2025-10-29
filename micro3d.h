@@ -112,6 +112,68 @@ inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsig
 
 inline void lookAt(matrix_t* view, vec4_t* eye, vec4_t* target, vec4_t* up)
 {
+    // 计算前向向量 (forward = target - eye)
+    vec4_t forward = {
+        target->x - eye->x,
+        target->y - eye->y,
+        target->z - eye->z,
+        0.0f
+    };
+
+    // 归一化前向向量
+    float length = sqrtf(forward.x * forward.x + forward.y * forward.y + forward.z * forward.z);
+    if (length > 0) {
+        forward.x /= length;
+        forward.y /= length;
+        forward.z /= length;
+    }
+
+    // 计算右向量 (right = forward × up)
+    vec4_t right = {
+        forward.y * up->z - forward.z * up->y,
+        forward.z * up->x - forward.x * up->z,
+        forward.x * up->y - forward.y * up->x,
+        0.0f
+    };
+
+    // 归一化右向量
+    length = sqrtf(right.x * right.x + right.y * right.y + right.z * right.z);
+    if (length > 0) {
+        right.x /= length;
+        right.y /= length;
+        right.z /= length;
+    }
+
+    // 计算上向量 (up = right × forward)
+    vec4_t new_up = {
+        right.y * forward.z - right.z * forward.y,
+        right.z * forward.x - right.x * forward.z,
+        right.x * forward.y - right.y * forward.x,
+        0.0f
+    };
+
+    // 构建视图矩阵 (右手坐标系，相机看向 -z 方向)
+    // 旋转部分
+    view->m[0][0] = right.x;
+    view->m[0][1] = new_up.x;
+    view->m[0][2] = -forward.x;
+    view->m[0][3] = 0.0f;
+
+    view->m[1][0] = right.y;
+    view->m[1][1] = new_up.y;
+    view->m[1][2] = -forward.y;
+    view->m[1][3] = 0.0f;
+
+    view->m[2][0] = right.z;
+    view->m[2][1] = new_up.z;
+    view->m[2][2] = -forward.z;
+    view->m[2][3] = 0.0f;
+
+    // 平移部分 (将世界坐标转换到相机坐标)
+    view->m[3][0] = -(right.x * eye->x + right.y * eye->y + right.z * eye->z);
+    view->m[3][1] = -(new_up.x * eye->x + new_up.y * eye->y + new_up.z * eye->z);
+    view->m[3][2] = forward.x * eye->x + forward.y * eye->y + forward.z * eye->z;
+    view->m[3][3] = 1.0f;
 }
 
 inline void render3d(device_t* device)
@@ -119,6 +181,7 @@ inline void render3d(device_t* device)
     // pixel(device, 400, 100, 0xc00000);
     // pixel(device, 400, 200, 0xc00000);
     // pixel(device, 400, 300, 0xc00000);
+
     // line(device, 0, 0, 400, 300, 0xc00000);
     // line(device, 400, 0, 400, 150, 0xc00000);
 

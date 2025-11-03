@@ -296,37 +296,63 @@ inline void matrix_scaling(matrix_t* m, float sx, float sy, float sz)
 }
 
 // 绘制长方体
-inline void draw_cube(device_t* device, const transform_t* transform, unsigned int color)
+inline void draw_cube(device_t* device, const transform_t* transform)
 {
     // 长方体的8个顶点（局部坐标）
     vec4_t vertices[8] = {
         // 前面四个顶点
-        { -0.5f, -0.5f,  0.5f, 1.0f }, // 左下前
-        {  0.5f, -0.5f,  0.5f, 1.0f }, // 右下前
-        {  0.5f,  0.5f,  0.5f, 1.0f }, // 右上前
-        { -0.5f,  0.5f,  0.5f, 1.0f }, // 左上前
+        { -0.5f, -0.5f,  0.5f, 1.0f }, // 左下前 0
+        {  0.5f, -0.5f,  0.5f, 1.0f }, // 右下前 1
+        {  0.5f,  0.5f,  0.5f, 1.0f }, // 右上前 2
+        { -0.5f,  0.5f,  0.5f, 1.0f }, // 左上前 3
         
         // 后面四个顶点
-        { -0.5f, -0.5f, -0.5f, 1.0f }, // 左下后
-        {  0.5f, -0.5f, -0.5f, 1.0f }, // 右下后
-        {  0.5f,  0.5f, -0.5f, 1.0f }, // 右上后
-        { -0.5f,  0.5f, -0.5f, 1.0f }  // 左上后
+        { -0.5f, -0.5f, -0.5f, 1.0f }, // 左下后 4
+        {  0.5f, -0.5f, -0.5f, 1.0f }, // 右下后 5
+        {  0.5f,  0.5f, -0.5f, 1.0f }, // 右上后 6
+        { -0.5f,  0.5f, -0.5f, 1.0f }  // 左上后 7
     };
 
-    // 定义6个面的12个三角形（每个面2个三角形）
-    int faces[12][3] = {
-        // 前面
-        {0, 1, 2}, {0, 2, 3},
-        // 后面
-        {4, 6, 5}, {4, 7, 6},
-        // 上面
-        {3, 2, 6}, {3, 6, 7},
-        // 下面
-        {0, 4, 5}, {0, 5, 1},
-        // 左面
-        {0, 3, 7}, {0, 7, 4},
-        // 右面
-        {1, 5, 6}, {1, 6, 2}
+    // 定义6个面的12个三角形，每个面指定颜色
+    struct Face {
+        int indices[3];  // 三角形顶点索引
+        unsigned int color; // 面的颜色
+    };
+    
+    // 六个面的颜色（RGB格式）
+    unsigned int colors[6] = {
+        0xFF0000, // 前面 - 红色
+        0x00FF00, // 后面 - 绿色  
+        0x0000FF, // 上面 - 蓝色
+        0xFFFF00, // 下面 - 黄色
+        0xFF00FF, // 左面 - 紫色
+        0x00FFFF  // 右面 - 青色
+    };
+    
+    Face faces[12] = {
+        // 前面 (红色)
+        {{0, 1, 2}, colors[0]},
+        {{0, 2, 3}, colors[0]},
+        
+        // 后面 (绿色)
+        {{5, 4, 7}, colors[1]},
+        {{5, 7, 6}, colors[1]},
+        
+        // 上面 (蓝色)
+        {{3, 2, 6}, colors[2]},
+        {{3, 6, 7}, colors[2]},
+        
+        // 下面 (黄色)
+        {{1, 0, 4}, colors[3]},
+        {{1, 4, 5}, colors[3]},
+        
+        // 左面 (紫色)
+        {{4, 0, 3}, colors[4]},
+        {{4, 3, 7}, colors[4]},
+        
+        // 右面 (青色)
+        {{1, 5, 6}, colors[5]},
+        {{1, 6, 2}, colors[5]}
     };
 
     // 变换后的顶点
@@ -345,17 +371,17 @@ inline void draw_cube(device_t* device, const transform_t* transform, unsigned i
         viewport_transform(&transformed_vertices[i], device->width, device->height);
     }
 
-    // 绘制所有三角形面
+    // 绘制所有三角形面，使用各自的颜色
     for (int i = 0; i < 12; i++) {
-        int idx1 = faces[i][0];
-        int idx2 = faces[i][1];
-        int idx3 = faces[i][2];
+        int idx1 = faces[i].indices[0];
+        int idx2 = faces[i].indices[1];
+        int idx3 = faces[i].indices[2];
         
         triangle(device, 
                  &transformed_vertices[idx1], 
                  &transformed_vertices[idx2], 
                  &transformed_vertices[idx3], 
-                 color);
+                 faces[i].color);
     }
 }
 
@@ -402,5 +428,5 @@ inline void render3d(device_t* device)
     matrix_perspective_fov(&transform.projection, 3.1415926f / 3.0f, aspect, 0.1f, 100.0f);
     
     // 绘制长方体
-    draw_cube(device, &transform, 0x00C000); // 绿色长方体
+    draw_cube(device, &transform);
 }

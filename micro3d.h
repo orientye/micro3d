@@ -204,6 +204,161 @@ inline void matrix_perspective_fov(matrix_t* projection, float fovY, float aspec
  //   projection->m[3][2] = (2.0f * zf * zn) / (zn - zf);
 }
 
+// 矩阵乘法：result = a * b
+inline void matrix_multiply(matrix_t* result, const matrix_t* a, const matrix_t* b)
+{
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            result->m[i][j] = 0;
+            for (int k = 0; k < 4; k++) {
+                result->m[i][j] += a->m[i][k] * b->m[k][j];
+            }
+        }
+    }
+}
+
+// 向量与矩阵乘法：result = v * m
+inline void vector_transform(vec4_t* result, const vec4_t* v, const matrix_t* m)
+{
+    result->x = v->x * m->m[0][0] + v->y * m->m[1][0] + v->z * m->m[2][0] + v->w * m->m[3][0];
+    result->y = v->x * m->m[0][1] + v->y * m->m[1][1] + v->z * m->m[2][1] + v->w * m->m[3][1];
+    result->z = v->x * m->m[0][2] + v->y * m->m[1][2] + v->z * m->m[2][2] + v->w * m->m[3][2];
+    result->w = v->x * m->m[0][3] + v->y * m->m[1][3] + v->z * m->m[2][3] + v->w * m->m[3][3];
+}
+
+// 透视除法：将齐次坐标转换为屏幕坐标
+inline void perspective_divide(vec4_t* v)
+{
+    if (v->w != 0.0f) {
+        v->x /= v->w;
+        v->y /= v->w;
+        v->z /= v->w;
+    }
+}
+
+// 将标准化设备坐标转换为屏幕坐标
+inline void viewport_transform(vec4_t* v, int screen_width, int screen_height)
+{
+    v->x = (v->x + 1.0f) * 0.5f * screen_width;
+    v->y = (1.0f - v->y) * 0.5f * screen_height; // Y轴翻转
+}
+
+// 创建单位矩阵
+inline void matrix_identity(matrix_t* m)
+{
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            m->m[i][j] = (i == j) ? 1.0f : 0.0f;
+        }
+    }
+}
+
+// 创建平移矩阵
+inline void matrix_translation(matrix_t* m, float tx, float ty, float tz)
+{
+    matrix_identity(m);
+    m->m[3][0] = tx;
+    m->m[3][1] = ty;
+    m->m[3][2] = tz;
+}
+
+// 创建旋转矩阵（绕X轴）
+inline void matrix_rotation_x(matrix_t* m, float angle)
+{
+    matrix_identity(m);
+    float cosA = cosf(angle);
+    float sinA = sinf(angle);
+    m->m[1][1] = cosA;
+    m->m[1][2] = sinA;
+    m->m[2][1] = -sinA;
+    m->m[2][2] = cosA;
+}
+
+// 创建旋转矩阵（绕Y轴）
+inline void matrix_rotation_y(matrix_t* m, float angle)
+{
+    matrix_identity(m);
+    float cosA = cosf(angle);
+    float sinA = sinf(angle);
+    m->m[0][0] = cosA;
+    m->m[0][2] = -sinA;
+    m->m[2][0] = sinA;
+    m->m[2][2] = cosA;
+}
+
+// 创建缩放矩阵
+inline void matrix_scaling(matrix_t* m, float sx, float sy, float sz)
+{
+    matrix_identity(m);
+    m->m[0][0] = sx;
+    m->m[1][1] = sy;
+    m->m[2][2] = sz;
+}
+
+// 绘制长方体
+inline void draw_cube(device_t* device, const transform_t* transform, unsigned int color)
+{
+    // 长方体的8个顶点（局部坐标）
+    vec4_t vertices[8] = {
+        // 前面四个顶点
+        { -0.5f, -0.5f,  0.5f, 1.0f }, // 左下前
+        {  0.5f, -0.5f,  0.5f, 1.0f }, // 右下前
+        {  0.5f,  0.5f,  0.5f, 1.0f }, // 右上前
+        { -0.5f,  0.5f,  0.5f, 1.0f }, // 左上前
+        
+        // 后面四个顶点
+        { -0.5f, -0.5f, -0.5f, 1.0f }, // 左下后
+        {  0.5f, -0.5f, -0.5f, 1.0f }, // 右下后
+        {  0.5f,  0.5f, -0.5f, 1.0f }, // 右上后
+        { -0.5f,  0.5f, -0.5f, 1.0f }  // 左上后
+    };
+
+    // 定义6个面的12个三角形（每个面2个三角形）
+    int faces[12][3] = {
+        // 前面
+        {0, 1, 2}, {0, 2, 3},
+        // 后面
+        {4, 6, 5}, {4, 7, 6},
+        // 上面
+        {3, 2, 6}, {3, 6, 7},
+        // 下面
+        {0, 4, 5}, {0, 5, 1},
+        // 左面
+        {0, 3, 7}, {0, 7, 4},
+        // 右面
+        {1, 5, 6}, {1, 6, 2}
+    };
+
+    // 变换后的顶点
+    vec4_t transformed_vertices[8];
+    
+    // 计算世界视图投影矩阵
+    matrix_t world_view;
+    matrix_t wvp; // world * view * projection
+    matrix_multiply(&world_view, &transform->world, &transform->view);
+    matrix_multiply(&wvp, &world_view, &transform->projection);
+
+    // 变换所有顶点
+    for (int i = 0; i < 8; i++) {
+        vector_transform(&transformed_vertices[i], &vertices[i], &wvp);
+        perspective_divide(&transformed_vertices[i]);
+        viewport_transform(&transformed_vertices[i], device->width, device->height);
+    }
+
+    // 绘制所有三角形面
+    for (int i = 0; i < 12; i++) {
+        int idx1 = faces[i][0];
+        int idx2 = faces[i][1];
+        int idx3 = faces[i][2];
+        
+        triangle(device, 
+                 &transformed_vertices[idx1], 
+                 &transformed_vertices[idx2], 
+                 &transformed_vertices[idx3], 
+                 color);
+    }
+}
+
 inline void render3d(device_t* device)
 {
     // pixel(device, 400, 100, 0xc00000);
@@ -213,10 +368,39 @@ inline void render3d(device_t* device)
     // line(device, 0, 0, 400, 300, 0xc00000);
     // line(device, 400, 0, 400, 150, 0xc00000);
 
-    // 定义三角形顶点
-    vec4_t v1 = { 100, 100, 0, 1 };
-    vec4_t v2 = { 400, 100, 0, 1 };
-    vec4_t v3 = { 250, 400, 0, 1 };
-    // 绘制三角形
-    triangle(device, &v1, &v2, &v3, 0xc00000);
+    //vec4_t v1 = { 100, 100, 0, 1 };
+    //vec4_t v2 = { 400, 100, 0, 1 };
+    //vec4_t v3 = { 250, 400, 0, 1 };
+    //triangle(device, &v1, &v2, &v3, 0xc00000);
+
+
+	 // 设置变换
+    transform_t transform;
+
+	// 世界矩阵：让长方体稍微旋转
+    float angle = 0.0f;
+    angle += 0.01f;
+    
+    matrix_t rotation_y, translation, scaling;
+    matrix_rotation_y(&rotation_y, angle);
+    matrix_translation(&translation, 0.0f, 0.0f, 3.0f);
+    matrix_scaling(&scaling, 1.0f, 0.5f, 0.8f); // 非立方体，更像长方体
+    
+    // 组合世界变换：先缩放，再旋转，最后平移
+    matrix_t temp;
+    matrix_multiply(&temp, &scaling, &rotation_y);
+    matrix_multiply(&transform.world, &temp, &translation);
+    
+    // 视图矩阵：相机位置
+    vec4_t eye = { 0.0f, 0.0f, -5.0f, 1.0f };
+    vec4_t target = { 0.0f, 0.0f, 0.0f, 1.0f };
+    vec4_t up = { 0.0f, 1.0f, 0.0f, 0.0f };
+    matrix_look_at(&transform.view, &eye, &target, &up);
+    
+    // 投影矩阵
+    float aspect = (float)device->width / (float)device->height;
+    matrix_perspective_fov(&transform.projection, 3.1415926f / 3.0f, aspect, 0.1f, 100.0f);
+    
+    // 绘制长方体
+    draw_cube(device, &transform, 0x00C000); // 绿色长方体
 }

@@ -91,12 +91,12 @@ inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsig
             // 当前像素位置（使用像素中心）
             vec4_t p = { (float)x + 0.5f, (float)y + 0.5f, 0, 1 };
 
-            float rd0 = cross_product_2d(v2, v3, &p);
-            float rd1 = cross_product_2d(v3, v1, &p);
-            float rd2 = cross_product_2d(v1, v2, &p);
+            float cp0 = cross_product_2d(v2, v3, &p);
+            float cp1 = cross_product_2d(v3, v1, &p);
+            float cp2 = cross_product_2d(v1, v2, &p);
 
             // 检查像素是否在三角形内
-            if (rd0 >= 0 && rd1 >= 0 && rd2 >= 0) {
+            if (cp0 >= 0 && cp1 >= 0 && cp2 >= 0) {
                 pixel(device, x, y, clr);
             }
         }

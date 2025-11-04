@@ -393,6 +393,90 @@ inline void draw_cube(device_t* device, const transform_t* transform)
     }
 }
 
+// 绘制长方体线框
+inline void draw_cube_wireframe(device_t* device, const transform_t* transform)
+{
+    // 长方体的8个顶点（局部坐标）
+    vec4_t vertices[8] = {
+        // 前面四个顶点
+        { -0.5f, -0.5f,  0.5f, 1.0f }, // 左下前 0
+        {  0.5f, -0.5f,  0.5f, 1.0f }, // 右下前 1
+        {  0.5f,  0.5f,  0.5f, 1.0f }, // 右上前 2
+        { -0.5f,  0.5f,  0.5f, 1.0f }, // 左上前 3
+        
+        // 后面四个顶点
+        { -0.5f, -0.5f, -0.5f, 1.0f }, // 左下后 4
+        {  0.5f, -0.5f, -0.5f, 1.0f }, // 右下后 5
+        {  0.5f,  0.5f, -0.5f, 1.0f }, // 右上后 6
+        { -0.5f,  0.5f, -0.5f, 1.0f }  // 左上后 7
+    };
+
+    // 定义12条边，每条边连接两个顶点
+    struct Edge {
+        int start, end;      // 边的起点和终点索引
+        unsigned int color;  // 边的颜色
+    };
+    
+    // 六个面的颜色（RGB格式）
+    unsigned int colors[6] = {
+        0xFF0000, // 前面 - 红色
+        0x00FF00, // 后面 - 绿色  
+        0x0000FF, // 上面 - 蓝色
+        0xFFFF00, // 下面 - 黄色
+        0xFF00FF, // 左面 - 紫色
+        0x00FFFF  // 右面 - 青色
+    };
+    
+    Edge edges[12] = {
+        // 前面四条边 (红色)
+        {0, 1, colors[0]}, // 下边
+        {1, 2, colors[0]}, // 右边
+        {2, 3, colors[0]}, // 上边
+        {3, 0, colors[0]}, // 左边
+        
+        // 后面四条边 (绿色)
+        {4, 5, colors[1]}, // 下边
+        {5, 6, colors[1]}, // 右边
+        {6, 7, colors[1]}, // 上边
+        {7, 4, colors[1]}, // 左边
+        
+        // 连接前后面的四条边
+        {0, 4, colors[4]}, // 左下 (紫色)
+        {1, 5, colors[5]}, // 右下 (青色)
+        {2, 6, colors[2]}, // 右上 (蓝色)
+        {3, 7, colors[3]}  // 左上 (黄色)
+    };
+
+    // 变换后的顶点
+    vec4_t transformed_vertices[8];
+    
+    // 计算世界视图投影矩阵
+    matrix_t world_view;
+    matrix_t wvp; // world * view * projection
+    matrix_multiply(&world_view, &transform->world, &transform->view);
+    matrix_multiply(&wvp, &world_view, &transform->projection);
+
+    // 变换所有顶点
+    for (int i = 0; i < 8; i++) {
+        vector_transform(&transformed_vertices[i], &vertices[i], &wvp);
+        perspective_divide(&transformed_vertices[i]);
+        viewport_transform(&transformed_vertices[i], device->width, device->height);
+    }
+
+    // 绘制所有边
+    for (int i = 0; i < 12; i++) {
+        int start_idx = edges[i].start;
+        int end_idx = edges[i].end;
+        
+        line(device, 
+             (int)transformed_vertices[start_idx].x, 
+             (int)transformed_vertices[start_idx].y,
+             (int)transformed_vertices[end_idx].x, 
+             (int)transformed_vertices[end_idx].y,
+             edges[i].color);
+    }
+}
+
 inline void render3d(device_t* device)
 {
     // pixel(device, 400, 100, 0xc00000);
@@ -407,7 +491,6 @@ inline void render3d(device_t* device)
     //vec4_t v3 = { 250, 400, 0, 1 };
     //triangle(device, &v1, &v2, &v3, 0xc00000);
 
-
 	 // 设置变换
     transform_t transform;
 
@@ -417,7 +500,7 @@ inline void render3d(device_t* device)
     
     matrix_t rotation_y, translation, scaling;
     matrix_rotation_y(&rotation_y, angle);
-    matrix_translation(&translation, 0.0f, 0.0f, 3.0f);
+    matrix_translation(&translation, 0.0f, 0.0f, 0.1f);
     matrix_scaling(&scaling, 1.0f, 0.5f, 0.8f); // 非立方体，更像长方体
     
     // 组合世界变换：先缩放，再旋转，最后平移
@@ -426,7 +509,7 @@ inline void render3d(device_t* device)
     matrix_multiply(&transform.world, &temp, &translation);
     
     // 视图矩阵：相机位置
-    vec4_t eye = { 0.0f, 0.0f, -5.0f, 1.0f };
+    vec4_t eye = { 0.0f, 0.0f, -2.0f, 1.0f };
     vec4_t target = { 0.0f, 0.0f, 0.0f, 1.0f };
     vec4_t up = { 0.0f, 1.0f, 0.0f, 0.0f };
     matrix_look_at(&transform.view, &eye, &target, &up);
@@ -436,5 +519,5 @@ inline void render3d(device_t* device)
     matrix_perspective_fov(&transform.projection, 3.1415926f / 3.0f, aspect, 0.1f, 100.0f);
     
     // 绘制长方体
-    draw_cube(device, &transform);
+    draw_cube_wireframe(device, &transform);
 }

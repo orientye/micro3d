@@ -103,6 +103,14 @@ inline void triangle(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsig
     }
 }
 
+//线框模式
+inline void triangle_wireframe(device_t* device, vec4_t* v1, vec4_t* v2, vec4_t* v3, unsigned int clr)
+{
+    line(device, (int)v1->x, (int)v1->y, (int)v2->x, (int)v2->y, clr);
+    line(device, (int)v2->x, (int)v2->y, (int)v3->x, (int)v3->y, clr);
+    line(device, (int)v3->x, (int)v3->y, (int)v1->x, (int)v1->y, clr);
+}
+
 inline void matrix_look_at(matrix_t* view, vec4_t* eye, vec4_t* target, vec4_t* up)
 {
     // 计算前向向量 (forward = target - eye)

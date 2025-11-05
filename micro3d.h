@@ -385,16 +385,16 @@ inline void draw_cube_wireframe(device_t* device, const transform_t* transform)
     // 长方体的8个顶点（局部坐标）
     vec4_t vertices[8] = {
         // 前面四个顶点
-        { -0.5f, -0.5f,  0.5f, 1.0f }, // 左下前 0
-        {  0.5f, -0.5f,  0.5f, 1.0f }, // 右下前 1
-        {  0.5f,  0.5f,  0.5f, 1.0f }, // 右上前 2
-        { -0.5f,  0.5f,  0.5f, 1.0f }, // 左上前 3
+        { -0.5f, -0.5f,  -0.5f, 1.0f }, // 左下前 0
+        {  0.5f, -0.5f,  -0.5f, 1.0f }, // 右下前 1
+        {  0.5f,  0.5f,  -0.5f, 1.0f }, // 右上前 2
+        { -0.5f,  0.5f,  -0.5f, 1.0f }, // 左上前 3
         
         // 后面四个顶点
-        { -0.5f, -0.5f, -0.5f, 1.0f }, // 左下后 4
-        {  0.5f, -0.5f, -0.5f, 1.0f }, // 右下后 5
-        {  0.5f,  0.5f, -0.5f, 1.0f }, // 右上后 6
-        { -0.5f,  0.5f, -0.5f, 1.0f }  // 左上后 7
+        { -0.5f, -0.5f, 0.5f, 1.0f }, // 左下后 4
+        {  0.5f, -0.5f, 0.5f, 1.0f }, // 右下后 5
+        {  0.5f,  0.5f, 0.5f, 1.0f }, // 右上后 6
+        { -0.5f,  0.5f, 0.5f, 1.0f }  // 左上后 7
     };
 
     // 定义12条边，每条边连接两个顶点
@@ -495,7 +495,7 @@ inline void render3d(device_t* device)
     matrix_multiply(&transform.world, &temp, &translation);
     
     // 视图矩阵：相机位置
-    vec4_t eye = { 0.0f, 0.0f, +1.5f, 1.0f };
+    vec4_t eye = { 0.0f, 0.0f, -1.5f, 1.0f };
     vec4_t target = { 0.0f, 0.0f, 0.0f, 1.0f };
     vec4_t up = { 0.0f, 1.0f, 0.0f, 0.0f };
     matrix_look_at(&transform.view, &eye, &target, &up);

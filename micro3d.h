@@ -463,7 +463,7 @@ inline void draw_cube_wireframe(device_t* device, const transform_t* transform)
     }
 }
 
-inline void render3d(device_t* device)
+inline void render3d(device_t* device, bool wireframe)
 {
     // pixel(device, 400, 100, 0xc00000);
     // pixel(device, 400, 200, 0xc00000);
@@ -504,6 +504,10 @@ inline void render3d(device_t* device)
     float aspect = (float)device->width / (float)device->height;
     matrix_perspective_fov(&transform.projection, 3.1415926f / 3.0f, aspect, 0.1f, 100.0f);
     
-    // 绘制长方体
-    draw_cube_wireframe(device, &transform);
+    // 绘制长方体：根据模式在实心和线框之间切换
+    if (wireframe) {
+        draw_cube_wireframe(device, &transform);
+    } else {
+        draw_cube(device, &transform);
+    }
 }

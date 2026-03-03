@@ -1,4 +1,4 @@
-﻿#include <Windows.h>
+#include <Windows.h>
 #include <chrono>
 #include <cmath>
 
@@ -18,6 +18,7 @@ void ClearScreen(COLORREF color);
 // 全局变量
 int g_windowWidth = 800;
 int g_windowHeight = 600;
+bool g_wireframeMode = true;
 
 // DIB相关变量
 HBITMAP g_hBitmap = nullptr;
@@ -120,7 +121,7 @@ int WINAPI WinMain(
 
                 // 自定义渲染
                 //Render();
-				render3d(&g_device);
+				render3d(&g_device, g_wireframeMode);
 
                 // 更新到屏幕
                 HDC hdc = GetDC(hwnd);
@@ -271,8 +272,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 1; // 阻止系统擦除背景
 
     case WM_KEYDOWN:
-        if (wParam == VK_ESCAPE)
+        if (wParam == VK_ESCAPE) {
             PostQuitMessage(0);
+        } else if (wParam == VK_SPACE) {
+            g_wireframeMode = !g_wireframeMode;
+        }
         return 0;
     }
 

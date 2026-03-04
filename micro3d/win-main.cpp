@@ -19,6 +19,8 @@ void ClearScreen(COLORREF color);
 int g_windowWidth = 800;
 int g_windowHeight = 600;
 bool g_wireframeMode = true;
+// 摄像机 Z 轴位置（越接近 0 越靠近物体）
+float g_cameraZ = -1.5f;
 
 // DIB相关变量
 HBITMAP g_hBitmap = nullptr;
@@ -275,7 +277,16 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         if (wParam == VK_ESCAPE) {
             PostQuitMessage(0);
         } else if (wParam == VK_SPACE) {
+            // 空格：在线框和实心模式之间切换
             g_wireframeMode = !g_wireframeMode;
+        } else if (wParam == VK_UP) {
+            // 向上键：向前移动（靠近物体）
+            g_cameraZ += 0.1f;
+            if (g_cameraZ > -0.3f) g_cameraZ = -0.3f; // 防止穿过近裁剪平面
+        } else if (wParam == VK_DOWN) {
+            // 向下键：向后移动（远离物体）
+            g_cameraZ -= 0.1f;
+            if (g_cameraZ < -5.0f) g_cameraZ = -5.0f;
         }
         return 0;
     }

@@ -463,6 +463,8 @@ inline void draw_cube_wireframe(device_t* device, const transform_t* transform)
     }
 }
 
+extern float g_cameraZ;
+
 inline void render3d(device_t* device, bool wireframe)
 {
     // 清空屏幕缓冲，避免模式切换时残留
@@ -493,7 +495,7 @@ inline void render3d(device_t* device, bool wireframe)
     matrix_t rotation_y, translation, scaling;
     matrix_rotation_y(&rotation_y, angle);
     matrix_translation(&translation, 0.0f, 0.0f, 0.1f);
-    matrix_scaling(&scaling, 1.0f, 0.5f, 0.8f); // 非立方体，更像长方体
+    matrix_scaling(&scaling, 1.0f, 1.0f, 1.0f); // 非立方体，更像长方体
     
     // 组合世界变换：先缩放，再旋转，最后平移
     matrix_t temp;
@@ -501,7 +503,7 @@ inline void render3d(device_t* device, bool wireframe)
     matrix_multiply(&transform.world, &temp, &translation);
     
     // 视图矩阵：相机位置
-    vec4_t eye = { 0.0f, 0.0f, -1.5f, 1.0f };
+    vec4_t eye = { 0.0f, 0.0f, g_cameraZ, 1.0f };
     vec4_t target = { 0.0f, 0.0f, 0.0f, 1.0f };
     vec4_t up = { 0.0f, 1.0f, 0.0f, 0.0f };
     matrix_look_at(&transform.view, &eye, &target, &up);

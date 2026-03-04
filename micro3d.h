@@ -465,6 +465,12 @@ inline void draw_cube_wireframe(device_t* device, const transform_t* transform)
 
 inline void render3d(device_t* device, bool wireframe)
 {
+    // Çå¿ÕÆÁÄ»»º³å£¬±ÜÃâÄ£Ê½ÇÐ»»Ê±²ÐÁô
+    int totalPixels = device->width * device->height;
+    for (int i = 0; i < totalPixels; ++i) {
+        device->buffer[i] = 0x000000; // ºÚÉ«±³¾°
+    }
+
     // pixel(device, 400, 100, 0xc00000);
     // pixel(device, 400, 200, 0xc00000);
     // pixel(device, 400, 300, 0xc00000);
